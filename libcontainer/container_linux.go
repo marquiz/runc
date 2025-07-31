@@ -226,6 +226,11 @@ func (c *Container) Exec() error {
 	return c.exec()
 }
 
+// GetIntelRdtManager returns the RDT manager of the container.
+func (c *Container) GetIntelRdtManager() *intelrdt.Manager {
+	return c.intelRdtManager
+}
+
 func (c *Container) exec() error {
 	path := filepath.Join(c.stateDir, execFifoFilename)
 	pid := c.initProcess.pid()
