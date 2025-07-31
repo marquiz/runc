@@ -647,28 +647,26 @@ func (m *Manager) Set(container *configs.Config) error {
 		// the value written in does not necessarily match what gets read out
 		// (leading zeros, cache id ordering etc).
 
+		parts := []string{}
+		if l3CacheSchema != "" {
+			parts = append(parts, l3CacheSchema)
+		}
+		if memBwSchema != "" {
+			parts = append(parts, memBwSchema)
+		}
+
 		// Write a single joint schema string to schemata file
-		if l3CacheSchema != "" && memBwSchema != "" {
-			if err := writeFile(path, "schemata", l3CacheSchema+"\n"+memBwSchema); err != nil {
-				return err
-			}
-		}
+		schemata := strings.Join(parts, "\n")
+		if schemata != "" {
 
-		// Write only L3 cache schema string to schemata file
-		if l3CacheSchema != "" && memBwSchema == "" {
-			if err := writeFile(path, "schemata", l3CacheSchema); err != nil {
-				return err
+			if err := os.MkdirAll(path, 0o755); err != nil {
+				return newLastCmdError(err)
 			}
-		}
-
-		// Write only memory bandwidth schema string to schemata file
-		if l3CacheSchema == "" && memBwSchema != "" {
-			if err := writeFile(path, "schemata", memBwSchema); err != nil {
+			if err := writeFile(path, "schemata", schemata); err != nil {
 				return err
 			}
 		}
 	}
-
 	return nil
 }
 
