@@ -179,6 +179,7 @@ func (c *Container) Set(config configs.Config) error {
 		return err
 	}
 	if c.intelRdtManager != nil {
+		fmt.Println("MGR AT SET", c.intelRdtManager)
 		if err := c.intelRdtManager.Set(&config); err != nil {
 			// Set configs back
 			if err2 := c.cgroupManager.Set(c.config.Cgroups.Resources); err2 != nil {
@@ -228,6 +229,9 @@ func (c *Container) Exec() error {
 
 // GetIntelRdtManager returns the RDT manager of the container.
 func (c *Container) GetIntelRdtManager() *intelrdt.Manager {
+	if c.intelRdtManager == nil {
+		return intelrdt.NewManager(c.config, c.id, "")
+	}
 	return c.intelRdtManager
 }
 

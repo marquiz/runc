@@ -361,34 +361,35 @@ other options are ignored.
 		config.Cgroups.Resources.Unified = r.Unified
 
 		// Update Intel RDT
-		l3CacheSchema := context.String("l3-cache-schema")
-		memBwSchema := context.String("mem-bw-schema")
-		if l3CacheSchema != "" && !intelrdt.IsCATEnabled() {
-			return errors.New("Intel RDT/CAT: l3 cache schema is not enabled")
-		}
-
-		if memBwSchema != "" && !intelrdt.IsMBAEnabled() {
-			return errors.New("Intel RDT/MBA: memory bandwidth schema is not enabled")
-		}
-
-		if l3CacheSchema != "" || memBwSchema != "" {
-			// If intelRdt is not specified in original configuration, we just don't
-			// Apply() to create intelRdt group or attach tasks for this container.
-			// In update command, we could re-enable through IntelRdtManager.Apply()
-			// and then update intelrdt constraint.
+		origIntelRdt := config.IntelRdt
+		if l3CacheSchema := context.String("l3-cache-schema"); l3CacheSchema != "" {
+			if !intelrdt.IsCATEnabled() {
+				return errors.New("Intel RDT/CAT: l3 cache schema is not enabled")
+			}
 			if config.IntelRdt == nil {
-				state, err := container.State()
-				if err != nil {
-					return err
-				}
 				config.IntelRdt = &configs.IntelRdt{}
-				intelRdtManager := intelrdt.NewManager(&config, container.ID(), state.IntelRdtPath)
-				if err := intelRdtManager.Apply(state.InitProcessPid); err != nil {
-					return err
-				}
 			}
 			config.IntelRdt.L3CacheSchema = l3CacheSchema
+		}
+		if memBwSchema := context.String("mem-bw-schema"); memBwSchema != "" {
+			if !intelrdt.IsMBAEnabled() {
+				return errors.New("Intel RDT/MBA: memory bandwidth schema is not enabled")
+			}
+			if config.IntelRdt == nil {
+				config.IntelRdt = &configs.IntelRdt{}
+			}
 			config.IntelRdt.MemBwSchema = memBwSchema
+		}
+
+		if origIntelRdt == nil && config.IntelRdt != nil {
+			state, err := container.State()
+			if err != nil {
+				return err
+			}
+			intelRdtManager := container.GetIntelRdtManager()
+			if err := intelRdtManager.Apply(state.InitProcessPid); err != nil {
+				return err
+			}
 		}
 
 		// XXX(kolyshkin@): currently "runc update" is unable to change
